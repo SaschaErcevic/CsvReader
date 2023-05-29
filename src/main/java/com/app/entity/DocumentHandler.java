@@ -1,12 +1,17 @@
 package com.app.entity;
 
+import com.app.ui.ConsoleReader;
+
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class DocumentHandler {
 
     private Document document;
+    private ConsoleReader consoleReader = new ConsoleReader();
 
     public void setDocument(Document document) {
         this.document = document;
@@ -52,15 +57,31 @@ public class DocumentHandler {
     }
 
     public boolean handleInput(String input, Document document) {
+        int pageToJumpTo = 0;
+        if (input.charAt(0) == 'J') {
+            try {
+                pageToJumpTo = Integer.parseInt(input.substring(1)) - 1;
+                input = "J";
+            } catch (NumberFormatException e) {
+                System.out.println("If you want to jump to a specific page use J directly followed by a number.\ne.g. J2 to jump to page 2.\n");
+                return true;
+            }
+        }
         switch (input) {
             case "F" -> document.setCurrentPage(0);
             case "P" -> document.setCurrentPage(Math.max(document.getCurrentPage() - 1, 0));
             case "N" -> document.setCurrentPage(Math.min(document.getCurrentPage() + 1, document.getRows().size() / document.getPageLength()));
             case "L" -> document.setCurrentPage(document.getRows().size() / document.getPageLength());
+            case "J" -> document.setCurrentPage(Math.max(0, Math.min(pageToJumpTo, document.getNumberOfPages() - 1)));
+            case "S" -> {
+                System.out.println("Please enter column name to sort on:");
+                String column = consoleReader.readUserInput();
+                sortRowsByColumn(column);
+            }
             case "E" -> {
                 return false;
             }
-            default -> System.out.println("Unknown command.");
+            default -> System.out.println("Unkown command.");
         }
         calculateAndSetStartOfPage();
         calculateAndSetEndOfPage();
@@ -69,7 +90,7 @@ public class DocumentHandler {
     }
 
     public void calculateAndSetMaxNumberOfPages(Integer pageLength) {
-        document.setNumberOfPages(document.getRows().size() - 1 / pageLength + 1);
+        document.setNumberOfPages((document.getRows().size() - 1) / pageLength + 1);
     }
 
     public void addDataNumbers() {
@@ -83,5 +104,24 @@ public class DocumentHandler {
             updatedRows.add(newRow);
         }
         document.setRows(updatedRows);
+    }
+
+    public void sortRowsByColumn(String column) {
+        int columnNumber = document.getHeader().indexOf(column);
+        if (columnNumber == -1) {
+            return;
+        }
+        document.setRows(document.getRows().stream()
+                .sorted(Comparator.comparing(row -> row.get(columnNumber)))
+                .collect(Collectors.toList()));
+        recalculateFirstColumn();
+        calculateMaxWidthPerColumnOnCurrentPage();
+    }
+
+    private void recalculateFirstColumn() {
+        int i = 1;
+        for (List<String> row : document.getRows()) {
+            row.set(0, i++ + ".");
+        }
     }
 }

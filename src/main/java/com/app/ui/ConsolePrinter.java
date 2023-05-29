@@ -22,7 +22,9 @@ public class ConsolePrinter {
                         stringFormatter.buildLine(
                                 document.getRows().get(i), "row", document.getMaxWidthPerColumnOnCurrentPage()));
             }
-            running = document.handleInput(printInputLineAndGetUserInput(), document);
+            printInfoLines(document.getCurrentPage(), document.getNumberOfPages());
+            String input = consoleReader.readUserInput();
+            running = document.handleInput(input, document);
         }
     }
 
@@ -30,8 +32,8 @@ public class ConsolePrinter {
         System.out.println(line);
     }
 
-    private String printInputLineAndGetUserInput() {
-        System.out.println("F)irst Page, P)revious Page, N)ext Page, L)ast Page, E)xit");
-        return consoleReader.readUserInput();
+    private void printInfoLines(int currentPage, int maxPages) {
+        System.out.println("Page " + (currentPage + 1) + " of " + maxPages);
+        System.out.println("F)irst Page, P)revious Page, N)ext Page, L)ast Page, J)ump to Page, S)ort, E)xit");
     }
 }
